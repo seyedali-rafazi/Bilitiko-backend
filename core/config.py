@@ -27,6 +27,7 @@ class Settings(BaseSettings):
     # MongoDB
     MONGODB_URI: str = config("MONGODB_URI")
     MONGODB_NAME: str = config("MONGODB_NAME", default="aircraft_tickets")
+    MONGODB_PASSWORD: str = config("MONGODB_PASSWORD", default="")
 
     # CORS
     CORS_ORIGINS: List[str] = config(
@@ -35,12 +36,15 @@ class Settings(BaseSettings):
 
     @property
     def mongodb_url(self) -> str:
-        """Get MongoDB connection URL."""
-        # The URI should already have the encoded password
-        # Just append the database name if needed
+        """Get MongoDB connection URL with password replacement if needed."""
         uri = self.MONGODB_URI
-        if not uri.endswith("/"):
-            uri += "/"
+
+        # If password placeholder exists and we have a password, replace it
+        if "<db_password>" in uri and self.MONGODB_PASSWORD:
+            # URL-encode the password for MongoDB connection
+            encoded_password = quote_plus(self.MONGODB_PASSWORD)
+            uri = uri.replace("<db_password>", encoded_password)
+
         return uri
 
     class Config:
