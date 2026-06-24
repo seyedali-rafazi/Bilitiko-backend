@@ -30,7 +30,7 @@ app.add_middleware(
 
 
 # Import routers
-from api.v1 import users, flights, bookings, transport, insurance
+from api.v1 import users, flights, bookings, transport, insurance, admin
 
 # Include routers
 app.include_router(users.router, prefix="/api/v1/users", tags=["users"])
@@ -38,6 +38,7 @@ app.include_router(flights.router, prefix="/api/v1/flights", tags=["flights"])
 app.include_router(bookings.router, prefix="/api/v1/bookings", tags=["bookings"])
 app.include_router(transport.router, prefix="/api/v1/transport", tags=["transport"])
 app.include_router(insurance.router, prefix="/api/v1/insurance", tags=["insurance"])
+app.include_router(admin.router, prefix="/api/v1/admin", tags=["admin"])
 
 
 @app.get("/")
