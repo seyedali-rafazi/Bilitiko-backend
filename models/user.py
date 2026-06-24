@@ -4,10 +4,7 @@ from datetime import datetime
 from typing import Optional
 from beanie import Document
 from pydantic import EmailStr, Field
-from passlib.context import CryptContext
-
-
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+import bcrypt
 
 
 class User(Document):
@@ -34,12 +31,18 @@ class User(Document):
 
     def verify_password(self, plain_password: str) -> bool:
         """Verify a password against the hash."""
-        return pwd_context.verify(plain_password, self.hashed_password)
+        return bcrypt.checkpw(
+            plain_password.encode("utf-8"),
+            self.hashed_password.encode("utf-8"),
+        )
 
     @staticmethod
     def get_password_hash(password: str) -> str:
         """Generate password hash."""
-        return pwd_context.hash(password)
+        return bcrypt.hashpw(
+            password.encode("utf-8"),
+            bcrypt.gensalt(),
+        ).decode("utf-8")
 
     def get_full_name(self) -> str:
         """Return the user's full name."""
