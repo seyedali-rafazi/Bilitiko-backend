@@ -55,6 +55,21 @@
       "key": "admin_key",
       "value": "your-secret-key-here",
       "type": "string"
+    },
+    {
+      "key": "admin_flight_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "admin_trip_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "admin_plan_id",
+      "value": "",
+      "type": "string"
     }
   ],
   "item": [
@@ -705,6 +720,307 @@
               "path": ["api", "v1", "admin", "seed", "status"]
             },
             "description": "Returns record counts per collection — use this to verify seeding completed."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin — Flights CRUD",
+      "description": "Create, list, update and delete flight records. All requests require X-Admin-Key header.",
+      "item": [
+        {
+          "name": "Create Flight",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    pm.collectionVariables.set('admin_flight_id', pm.response.json().id);",
+                  "    pm.test('Flight created', () => pm.response.to.have.status(201));",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"},
+              {"key": "X-Admin-Key", "value": "{{admin_key}}"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"airline\": \"ماهان\",\n  \"flight_number\": \"W5150\",\n  \"origin\": \"THR\",\n  \"destination\": \"MHD\",\n  \"departure_time\": \"2025-08-01T08:00:00\",\n  \"arrival_time\": \"2025-08-01T09:30:00\",\n  \"duration\": \"1h 30m\",\n  \"price\": 2500000,\n  \"available_seats\": 120,\n  \"stops\": 0,\n  \"flight_class\": \"economy\",\n  \"features\": [\"WiFi\", \"وعده غذایی\"],\n  \"is_active\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/flights",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "admin", "flights"]
+            }
+          }
+        },
+        {
+          "name": "List Flights",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "X-Admin-Key", "value": "{{admin_key}}"}],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/flights?skip=0&limit=20",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "admin", "flights"],
+              "query": [
+                {"key": "skip", "value": "0"},
+                {"key": "limit", "value": "20"},
+                {"key": "origin", "value": "", "disabled": true},
+                {"key": "destination", "value": "", "disabled": true}
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update Flight",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"},
+              {"key": "X-Admin-Key", "value": "{{admin_key}}"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"price\": 2800000,\n  \"available_seats\": 95,\n  \"is_active\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/flights/{{admin_flight_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "admin", "flights", "{{admin_flight_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Delete Flight",
+          "request": {
+            "method": "DELETE",
+            "header": [{"key": "X-Admin-Key", "value": "{{admin_key}}"}],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/flights/{{admin_flight_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "admin", "flights", "{{admin_flight_id}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin — Transport CRUD",
+      "description": "Create, list, update and delete bus and train trips. All requests require X-Admin-Key header.",
+      "item": [
+        {
+          "name": "Create Bus Trip",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    pm.collectionVariables.set('admin_trip_id', pm.response.json().id);",
+                  "    pm.test('Trip created', () => pm.response.to.have.status(201));",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"},
+              {"key": "X-Admin-Key", "value": "{{admin_key}}"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"transport_type\": \"bus\",\n  \"company\": \"ایران‌پیما\",\n  \"trip_number\": \"BUS201\",\n  \"origin\": \"تهران\",\n  \"destination\": \"مشهد\",\n  \"departure_time\": \"2025-08-01T20:00:00\",\n  \"arrival_time\": \"2025-08-02T07:00:00\",\n  \"duration\": \"11h 0m\",\n  \"price\": 350000,\n  \"available_seats\": 44,\n  \"features\": [\"کولر\", \"WiFi\"],\n  \"is_active\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/transport",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "admin", "transport"]
+            }
+          }
+        },
+        {
+          "name": "Create Train Trip",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"},
+              {"key": "X-Admin-Key", "value": "{{admin_key}}"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"transport_type\": \"train\",\n  \"company\": \"رجا\",\n  \"trip_number\": \"TRN301\",\n  \"origin\": \"تهران\",\n  \"destination\": \"اصفهان\",\n  \"departure_time\": \"2025-08-02T07:00:00\",\n  \"arrival_time\": \"2025-08-02T13:00:00\",\n  \"duration\": \"6h 0m\",\n  \"price\": 180000,\n  \"available_seats\": 80,\n  \"features\": [\"کوپه ۴ نفره\", \"سرویس بهداشتی\"],\n  \"is_active\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/transport",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "admin", "transport"]
+            }
+          }
+        },
+        {
+          "name": "List Transport Trips",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "X-Admin-Key", "value": "{{admin_key}}"}],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/transport?skip=0&limit=20",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "admin", "transport"],
+              "query": [
+                {"key": "skip", "value": "0"},
+                {"key": "limit", "value": "20"},
+                {"key": "transport_type", "value": "bus", "disabled": true},
+                {"key": "origin", "value": "", "disabled": true},
+                {"key": "destination", "value": "", "disabled": true}
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update Transport Trip",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"},
+              {"key": "X-Admin-Key", "value": "{{admin_key}}"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"price\": 400000,\n  \"available_seats\": 30,\n  \"is_active\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/transport/{{admin_trip_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "admin", "transport", "{{admin_trip_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Delete Transport Trip",
+          "request": {
+            "method": "DELETE",
+            "header": [{"key": "X-Admin-Key", "value": "{{admin_key}}"}],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/transport/{{admin_trip_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "admin", "transport", "{{admin_trip_id}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin — Insurance Plans CRUD",
+      "description": "Create, list, update and delete insurance plans. All requests require X-Admin-Key header.",
+      "item": [
+        {
+          "name": "Create Insurance Plan",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    pm.collectionVariables.set('admin_plan_id', pm.response.json().id);",
+                  "    pm.test('Plan created', () => pm.response.to.have.status(201));",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"},
+              {"key": "X-Admin-Key", "value": "{{admin_key}}"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"بیمه مسافرتی پایه\",\n  \"price\": 150000,\n  \"coverage\": \"تا سقف ۵۰,۰۰۰ دلار\",\n  \"popular\": false,\n  \"features\": [\"پوشش درمانی\", \"لغو سفر\", \"گم‌شدن چمدان\"],\n  \"is_active\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/insurance/plans",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "admin", "insurance", "plans"]
+            }
+          }
+        },
+        {
+          "name": "Create Insurance Plan (Popular)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"},
+              {"key": "X-Admin-Key", "value": "{{admin_key}}"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"بیمه مسافرتی طلایی\",\n  \"price\": 350000,\n  \"coverage\": \"تا سقف ۲۰۰,۰۰۰ دلار\",\n  \"popular\": true,\n  \"features\": [\"پوشش درمانی کامل\", \"لغو سفر\", \"گم‌شدن چمدان\", \"تأخیر پرواز\", \"مسئولیت مدنی\"],\n  \"is_active\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/insurance/plans",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "admin", "insurance", "plans"]
+            }
+          }
+        },
+        {
+          "name": "List Insurance Plans (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "X-Admin-Key", "value": "{{admin_key}}"}],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/insurance/plans?skip=0&limit=20",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "admin", "insurance", "plans"],
+              "query": [
+                {"key": "skip", "value": "0"},
+                {"key": "limit", "value": "20"}
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update Insurance Plan",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"},
+              {"key": "X-Admin-Key", "value": "{{admin_key}}"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"price\": 180000,\n  \"popular\": true,\n  \"is_active\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/insurance/plans/{{admin_plan_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "admin", "insurance", "plans", "{{admin_plan_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Delete Insurance Plan",
+          "request": {
+            "method": "DELETE",
+            "header": [{"key": "X-Admin-Key", "value": "{{admin_key}}"}],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/insurance/plans/{{admin_plan_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "admin", "insurance", "plans", "{{admin_plan_id}}"]
+            }
           }
         }
       ]
