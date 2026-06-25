@@ -29,7 +29,7 @@ class Database:
         from models.flight import Flight, City, PopularFlight, Destination
         from models.booking import Booking
         from models.transport import TransportTrip, TransportRoute
-        from models.insurance import Insurance
+        from models.insurance import Insurance, InsuranceBooking
 
         # Initialize Beanie with all document models
         await init_beanie(
@@ -44,6 +44,7 @@ class Database:
                 TransportTrip,
                 TransportRoute,
                 Insurance,
+                InsuranceBooking,
             ],
         )
         print(f"Connected to MongoDB: {settings.MONGODB_NAME}")
