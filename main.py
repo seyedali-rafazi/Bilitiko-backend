@@ -2,7 +2,10 @@
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.encoders import jsonable_encoder
 from contextlib import asynccontextmanager
+from beanie import PydanticObjectId
+from bson import ObjectId
 from core.config import settings
 from core.database import db
 
@@ -17,7 +20,16 @@ async def lifespan(app: FastAPI):
     await db.close_db()
 
 
-app = FastAPI(title=settings.APP_NAME, version=settings.VERSION, lifespan=lifespan)
+app = FastAPI(
+    title=settings.APP_NAME,
+    version=settings.VERSION,
+    lifespan=lifespan,
+    # Serialize ObjectId / PydanticObjectId as plain strings in all responses
+    json_encoders={
+        PydanticObjectId: str,
+        ObjectId: str,
+    },
+)
 
 # CORS middleware
 app.add_middleware(
