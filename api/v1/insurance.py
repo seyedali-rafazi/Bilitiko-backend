@@ -1,7 +1,7 @@
 """Insurance API endpoints."""
 
-from typing import Optional
-from datetime import date
+from typing import Optional, List
+from datetime import date, datetime
 from fastapi import APIRouter, HTTPException, status, Depends
 from beanie import PydanticObjectId
 from pydantic import BaseModel, EmailStr
@@ -28,6 +28,23 @@ class InsuranceBookingCreate(BaseModel):
     end_date: date
     phone: str
     email: EmailStr
+
+
+class InsuranceBookingResponse(BaseModel):
+    """Typed response returned after creating an insurance booking."""
+    id: str
+    tracking_code: str
+    status: str
+    plan_id: str
+    plan_title: str
+    plan_price: float
+    plan_coverage: str
+    first_name: str
+    last_name: str
+    destination: str
+    start_date: str
+    end_date: str
+    created_at: str
 
 
 # ─── Plans ────────────────────────────────────────────────────────────────────
@@ -61,7 +78,7 @@ async def get_insurance_plan(plan_id: str):
 
 # ─── Bookings ─────────────────────────────────────────────────────────────────
 
-@router.post("/bookings", status_code=status.HTTP_201_CREATED)
+@router.post("/bookings", status_code=status.HTTP_201_CREATED, response_model=InsuranceBookingResponse)
 async def create_insurance_booking(
     data: InsuranceBookingCreate,
     current_user: Optional[User] = Depends(get_optional_user),
@@ -72,6 +89,8 @@ async def create_insurance_booking(
     Validates that the requested plan exists, generates a tracking code,
     persists the booking with status=confirmed, and returns the full record
     (including tracking_code) so the frontend can redirect to the success page.
+
+    Works for both guests (no Authorization header) and authenticated users.
     """
     # Validate plan exists
     try:
@@ -92,10 +111,16 @@ async def create_insurance_booking(
             detail="end_date must be on or after start_date",
         )
 
-    # Generate unique tracking code
-    tracking_code = "INS" + "".join(
-        random.choices(string.ascii_uppercase + string.digits, k=7)
-    )
+    # Generate unique tracking code (retry on collision)
+    for _ in range(5):
+        tracking_code = "INS" + "".join(
+            random.choices(string.ascii_uppercase + string.digits, k=7)
+        )
+        existing = await InsuranceBooking.find_one(
+            InsuranceBooking.tracking_code == tracking_code
+        )
+        if not existing:
+            break
 
     booking = InsuranceBooking(
         plan_id=str(plan.id),
@@ -115,22 +140,21 @@ async def create_insurance_booking(
 
     await booking.insert()
 
-    # Return the booking enriched with plan details for the frontend
-    return {
-        "id": str(booking.id),
-        "tracking_code": booking.tracking_code,
-        "status": booking.status,
-        "plan_id": str(plan.id),
-        "plan_title": plan.title,
-        "plan_price": plan.price,
-        "plan_coverage": plan.coverage,
-        "first_name": booking.first_name,
-        "last_name": booking.last_name,
-        "destination": booking.destination,
-        "start_date": str(booking.start_date),
-        "end_date": str(booking.end_date),
-        "created_at": booking.created_at.isoformat(),
-    }
+    return InsuranceBookingResponse(
+        id=str(booking.id),
+        tracking_code=booking.tracking_code,
+        status=booking.status.value,
+        plan_id=str(plan.id),
+        plan_title=plan.title,
+        plan_price=plan.price,
+        plan_coverage=plan.coverage,
+        first_name=booking.first_name,
+        last_name=booking.last_name,
+        destination=booking.destination,
+        start_date=booking.start_date.isoformat(),
+        end_date=booking.end_date.isoformat(),
+        created_at=booking.created_at.isoformat(),
+    )
 
 
 @router.get("/bookings/my-bookings")

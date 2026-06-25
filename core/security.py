@@ -3,7 +3,7 @@
 from datetime import datetime, timedelta
 from typing import Optional
 from jose import JWTError, jwt
-from fastapi import Depends, HTTPException, Request, status
+from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from core.config import settings
 from models.user import User
@@ -102,7 +102,11 @@ async def get_optional_user(
     user_id: str = payload.get("sub")
     if not user_id:
         return None
-    user = await User.get(user_id)
+    try:
+        from beanie import PydanticObjectId
+        user = await User.get(PydanticObjectId(user_id))
+    except Exception:
+        return None
     if not user or not user.is_active:
         return None
     return user
