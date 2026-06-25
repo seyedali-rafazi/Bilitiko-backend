@@ -41,7 +41,7 @@ async def create_booking(
 async def get_my_bookings(current_user: User = Depends(get_current_active_user)):
     """Get current user's bookings."""
     bookings = (
-        await Booking.find(Booking.user_id == str(current_user.id))
+        await Booking.find({"user_id": str(current_user.id)})
         .sort("-created_at")
         .to_list()
     )
@@ -51,7 +51,7 @@ async def get_my_bookings(current_user: User = Depends(get_current_active_user))
 @router.get("/track/{tracking_code}")
 async def track_booking(tracking_code: str):
     """Track booking by tracking code."""
-    booking = await Booking.find_one(Booking.tracking_code == tracking_code)
+    booking = await Booking.find_one({"tracking_code": tracking_code})
     if not booking:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Booking not found"
