@@ -5,7 +5,7 @@ from fastapi import APIRouter, HTTPException, status, Depends
 from beanie import PydanticObjectId
 from models.booking import Booking
 from models.user import User
-from core.security import get_current_user, get_current_active_user
+from core.security import get_optional_user, get_current_active_user
 
 
 router = APIRouter()
@@ -13,7 +13,7 @@ router = APIRouter()
 
 @router.post("/", status_code=status.HTTP_201_CREATED)
 async def create_booking(
-    booking_data: dict, current_user: Optional[User] = Depends(get_current_user)
+    booking_data: dict, current_user: Optional[User] = Depends(get_optional_user)
 ):
     """Create a new booking."""
     # Generate tracking code

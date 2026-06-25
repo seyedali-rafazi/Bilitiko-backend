@@ -1,17 +1,36 @@
 """Insurance API endpoints."""
 
 from typing import Optional
+from datetime import date
 from fastapi import APIRouter, HTTPException, status, Depends
 from beanie import PydanticObjectId
-from models.insurance import Insurance, InsuranceBooking
+from pydantic import BaseModel, EmailStr
+from models.insurance import Insurance, InsuranceBooking, InsuranceStatus
 from models.user import User
-from core.security import get_current_user, get_current_active_user
+from core.security import get_current_active_user, get_optional_user
 import random
 import string
 
 
 router = APIRouter()
 
+
+# ─── Schemas ──────────────────────────────────────────────────────────────────
+
+class InsuranceBookingCreate(BaseModel):
+    plan_id: str
+    first_name: str
+    last_name: str
+    national_id: str
+    birth_date: date
+    destination: str
+    start_date: date
+    end_date: date
+    phone: str
+    email: EmailStr
+
+
+# ─── Plans ────────────────────────────────────────────────────────────────────
 
 @router.get("/plans")
 async def get_insurance_plans():
@@ -29,45 +48,89 @@ async def get_insurance_plan(plan_id: str):
     """Get insurance plan by ID."""
     try:
         plan = await Insurance.get(PydanticObjectId(plan_id))
-        if not plan:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail="Insurance plan not found"
-            )
-        return plan
-    except Exception as e:
+    except Exception:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid plan ID"
         )
+    if not plan or not plan.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Insurance plan not found"
+        )
+    return plan
 
+
+# ─── Bookings ─────────────────────────────────────────────────────────────────
 
 @router.post("/bookings", status_code=status.HTTP_201_CREATED)
 async def create_insurance_booking(
-    booking_data: dict, current_user: Optional[User] = Depends(get_current_user)
+    data: InsuranceBookingCreate,
+    current_user: Optional[User] = Depends(get_optional_user),
 ):
-    """Create a new insurance booking."""
-    # Generate tracking code
+    """
+    Create a new insurance booking.
+
+    Validates that the requested plan exists, generates a tracking code,
+    persists the booking with status=confirmed, and returns the full record
+    (including tracking_code) so the frontend can redirect to the success page.
+    """
+    # Validate plan exists
+    try:
+        plan = await Insurance.get(PydanticObjectId(data.plan_id))
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid plan ID"
+        )
+    if not plan or not plan.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Insurance plan not found"
+        )
+
+    # Validate date range
+    if data.end_date < data.start_date:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="end_date must be on or after start_date",
+        )
+
+    # Generate unique tracking code
     tracking_code = "INS" + "".join(
         random.choices(string.ascii_uppercase + string.digits, k=7)
     )
 
-    # Create booking
     booking = InsuranceBooking(
-        plan_id=booking_data.get("plan_id"),
+        plan_id=str(plan.id),
         user_id=str(current_user.id) if current_user else None,
-        first_name=booking_data.get("first_name"),
-        last_name=booking_data.get("last_name"),
-        national_id=booking_data.get("national_id"),
-        birth_date=booking_data.get("birth_date"),
-        destination=booking_data.get("destination"),
-        start_date=booking_data.get("start_date"),
-        end_date=booking_data.get("end_date"),
-        phone=booking_data.get("phone"),
-        email=booking_data.get("email"),
+        first_name=data.first_name,
+        last_name=data.last_name,
+        national_id=data.national_id,
+        birth_date=data.birth_date,
+        destination=data.destination,
+        start_date=data.start_date,
+        end_date=data.end_date,
+        phone=data.phone,
+        email=data.email,
         tracking_code=tracking_code,
+        status=InsuranceStatus.CONFIRMED,
     )
 
     await booking.insert()
-    return booking
+
+    # Return the booking enriched with plan details for the frontend
+    return {
+        "id": str(booking.id),
+        "tracking_code": booking.tracking_code,
+        "status": booking.status,
+        "plan_id": str(plan.id),
+        "plan_title": plan.title,
+        "plan_price": plan.price,
+        "plan_coverage": plan.coverage,
+        "first_name": booking.first_name,
+        "last_name": booking.last_name,
+        "destination": booking.destination,
+        "start_date": str(booking.start_date),
+        "end_date": str(booking.end_date),
+        "created_at": booking.created_at.isoformat(),
+    }
 
 
 @router.get("/bookings/my-bookings")
@@ -103,24 +166,23 @@ async def get_insurance_booking(
     """Get insurance booking by ID."""
     try:
         booking = await InsuranceBooking.get(PydanticObjectId(booking_id))
-        if not booking:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Insurance booking not found",
-            )
-
-        # Check if user owns this booking
-        if booking.user_id != str(current_user.id) and not current_user.is_staff:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Not authorized to view this booking",
-            )
-
-        return booking
-    except Exception as e:
+    except Exception:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid booking ID"
         )
+    if not booking:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Insurance booking not found",
+        )
+
+    if booking.user_id != str(current_user.id) and not current_user.is_staff:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized to view this booking",
+        )
+
+    return booking
 
 
 # Made with Bob

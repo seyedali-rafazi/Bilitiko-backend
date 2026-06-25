@@ -3,13 +3,14 @@
 from datetime import datetime, timedelta
 from typing import Optional
 from jose import JWTError, jwt
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from core.config import settings
 from models.user import User
 
 
 security = HTTPBearer()
+optional_security = HTTPBearer(auto_error=False)
 
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
@@ -85,6 +86,25 @@ async def get_current_user(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Inactive user"
         )
 
+    return user
+
+
+async def get_optional_user(
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(optional_security),
+) -> Optional[User]:
+    """Return the authenticated user or None if no token is provided."""
+    if not credentials:
+        return None
+    try:
+        payload = verify_token(credentials.credentials)
+    except HTTPException:
+        return None
+    user_id: str = payload.get("sub")
+    if not user_id:
+        return None
+    user = await User.get(user_id)
+    if not user or not user.is_active:
+        return None
     return user
 
 
