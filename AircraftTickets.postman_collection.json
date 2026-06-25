@@ -412,6 +412,81 @@
               "query": [{"key": "transport_type", "value": "train"}]
             }
           }
+        },
+        {
+          "name": "All Transport Cities",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/transport/cities/all",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "transport", "cities", "all"],
+              "description": "Return all distinct city names that appear as origin or destination in transport trips."
+            }
+          }
+        },
+        {
+          "name": "All Transport Cities (bus only)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/transport/cities/all?transport_type=bus",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "transport", "cities", "all"],
+              "query": [{"key": "transport_type", "value": "bus"}],
+              "description": "Return distinct city names for bus trips only."
+            }
+          }
+        },
+        {
+          "name": "All Transport Cities (train only)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/transport/cities/all?transport_type=train",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "transport", "cities", "all"],
+              "query": [{"key": "transport_type", "value": "train"}],
+              "description": "Return distinct city names for train trips only."
+            }
+          }
+        },
+        {
+          "name": "Search Transport Cities",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/transport/cities/search?q=تهران",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "transport", "cities", "search"],
+              "query": [
+                {"key": "q", "value": "تهران"},
+                {"key": "transport_type", "value": "", "disabled": true}
+              ]
+            },
+            "description": "Search transport city names by substring (max 10 results). Optionally filter by transport_type (bus or train)."
+          }
+        },
+        {
+          "name": "Search Transport Cities (bus)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/transport/cities/search?q=تهران&transport_type=bus",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "transport", "cities", "search"],
+              "query": [
+                {"key": "q", "value": "تهران"},
+                {"key": "transport_type", "value": "bus"}
+              ]
+            },
+            "description": "Search bus city names by substring."
+          }
         }
       ]
     },
