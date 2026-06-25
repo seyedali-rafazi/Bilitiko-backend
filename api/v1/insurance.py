@@ -1,7 +1,6 @@
 """Insurance API endpoints."""
 
-from typing import Optional, List
-from datetime import date, datetime
+from typing import Optional
 from fastapi import APIRouter, HTTPException, status, Depends
 from beanie import PydanticObjectId
 from pydantic import BaseModel, EmailStr
@@ -22,10 +21,10 @@ class InsuranceBookingCreate(BaseModel):
     first_name: str
     last_name: str
     national_id: str
-    birth_date: date
+    birth_date: str          # ISO string YYYY-MM-DD
     destination: str
-    start_date: date
-    end_date: date
+    start_date: str          # ISO string YYYY-MM-DD
+    end_date: str            # ISO string YYYY-MM-DD
     phone: str
     email: EmailStr
 
@@ -104,7 +103,7 @@ async def create_insurance_booking(
             status_code=status.HTTP_404_NOT_FOUND, detail="Insurance plan not found"
         )
 
-    # Validate date range
+    # Validate date range (string comparison works for ISO dates YYYY-MM-DD)
     if data.end_date < data.start_date:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -152,8 +151,8 @@ async def create_insurance_booking(
         first_name=booking.first_name,
         last_name=booking.last_name,
         destination=booking.destination,
-        start_date=booking.start_date.isoformat(),
-        end_date=booking.end_date.isoformat(),
+        start_date=booking.start_date,
+        end_date=booking.end_date,
         created_at=booking.created_at.isoformat(),
     )
 

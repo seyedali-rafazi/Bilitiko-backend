@@ -1,6 +1,6 @@
 """Insurance models using Beanie ODM."""
 
-from datetime import datetime, date
+from datetime import datetime
 from typing import Optional, List
 from beanie import Document
 from pydantic import Field, EmailStr
@@ -60,10 +60,10 @@ class InsuranceBooking(Document):
     first_name: str = Field(max_length=100)
     last_name: str = Field(max_length=100)
     national_id: str = Field(max_length=20)
-    birth_date: date
+    birth_date: str = Field(max_length=20)   # ISO string YYYY-MM-DD
     destination: str = Field(max_length=200)
-    start_date: date
-    end_date: date
+    start_date: str = Field(max_length=20)   # ISO string YYYY-MM-DD
+    end_date: str = Field(max_length=20)     # ISO string YYYY-MM-DD
     phone: str = Field(max_length=20)
     email: EmailStr
 
