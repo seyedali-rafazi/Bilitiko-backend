@@ -111,14 +111,15 @@ async def create_insurance_booking(
             detail="end_date must be on or after start_date",
         )
 
-    # Generate unique tracking code (retry on collision)
+    # Generate unique tracking code (retry on collision).
+    # Use raw dict query to avoid Beanie class-attribute access issues on some
+    # deployment environments (e.g. Vercel with older Beanie versions).
+    tracking_code = ""
     for _ in range(5):
         tracking_code = "INS" + "".join(
             random.choices(string.ascii_uppercase + string.digits, k=7)
         )
-        existing = await InsuranceBooking.find_one(
-            InsuranceBooking.tracking_code == tracking_code
-        )
+        existing = await InsuranceBooking.find_one({"tracking_code": tracking_code})
         if not existing:
             break
 
@@ -163,7 +164,7 @@ async def get_my_insurance_bookings(
 ):
     """Get current user's insurance bookings."""
     bookings = (
-        await InsuranceBooking.find(InsuranceBooking.user_id == str(current_user.id))
+        await InsuranceBooking.find({"user_id": str(current_user.id)})
         .sort("-created_at")
         .to_list()
     )
@@ -173,9 +174,7 @@ async def get_my_insurance_bookings(
 @router.get("/bookings/track/{tracking_code}")
 async def track_insurance_booking(tracking_code: str):
     """Track insurance booking by tracking code."""
-    booking = await InsuranceBooking.find_one(
-        InsuranceBooking.tracking_code == tracking_code
-    )
+    booking = await InsuranceBooking.find_one({"tracking_code": tracking_code})
     if not booking:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Insurance booking not found"
